@@ -1,0 +1,35 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2580
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\qj\partightenfactor0
+
+\f0\fs44 \cf0 Encender todos los PCs y routers\
+Prueba de conectividad con PC_2, e hacer ping de PC_1 con PC_2\
+Ping 33.1.1.3\
+Ifconfig y vemos que enp0s3 no est\'e1 levantada por lo que hacemos sudo ifconfig enp0s3 up pero da error diciendo que no hay dispositivo/no la reconoce como interfaz.\
+Para arreglarlo:\
+Apagamos PC_1, configuraci\'f3n red y habilitamos el adaptador 1 y le damos tambi\'e9n a cable conectado. Iniciamos de nuevo PC_1. Y ya podemos levantar la interfaz enp0s3 y nos salen datos de esa interfaz y nos sale su respectiva IP. Cable conectado a tarjeta de red.\
+\
+2. Nos sale al hacer ping Destination Host Unreachable\
+Comprobamos ahora PC_2. Ifconfig y vemos que la IP del PC_2 est\'e1 mal. La cambiamos en el netplan: nano /etc/netplan/01-\'85\
+Cambiamos en adresses la direcci\'f3n IP a 33.1.1.3, salimos y hacemos sudo netplan apply y vemos en ifconfig que la IP ya est\'e1 configurada. Hacemos ping entre PC_1 y PC_2 y ya nos funciona.\
+\
+3. Probamos a hacer ping a PC_3, ping 33.1.2.2 desde PC_1. En PC_1:\
+Comprobamos la tabla de rutas de ese equipo, route -n. Falta gateway para salir de la red. sudo nano /etc/netplan/01-\'85 y descomentamos la linea debajo de addresses. Y hacemos sudo netplan apply.\
+Si ahora hacemos route -n nos sale que tiene salida a dicho PC y, despu\'e9s de un rato, sale Destination Host Unreachable. Solucionamos conn traceroute 33.1.2.2 y vemos que el paquete llega al router pero no sale. Comprobamos las tablas de los routers.\
+En R1_Sem5 hacemos ip route print y parece que est\'e1 todo correcto.\
+En R2_Sem5 hacemos ip route print y vemos que falta una, el gateway para ir al router 1. \
+Nos vamos al PC_3 y ejecutamos winbox (en Desktop/Software) con wine winbox.exe y despu\'e9s si le damos a IP routes, le damos al m\'e1s Dst. Address 33.1.1.0/24 Gateway 172.16.1.1. Si le damos a apply sale que es alcanzable por el ether4. Salimos de winbox.Y ya si en PC_1 hacemos un ping a PC_3 ping 33.1.2.2 nos funciona.\
+\
+4. Probar si los equipos de la subred 1 pueden, a trav\'e9s de telnet conectarse al PC_3 y PC_2.\
+Desde PC_1 Telnet a PC_2 con telnet 33.1.1.3, administrador, finisterre\
+Desde PC_1 telnet a PC_3 telnet 33.1.2.2 y no nos deja.\
+Netstat \'e9n PC_1. Hacemos netstat -tl y vemos que escucha. Ejecutamos Wireshark, wine wireshark y hacemos mientras telnet 33.1.2.2 y vemos que ni siquiera llega el trafico al PC_3, el problema es el firewall de uno de los dos routers. Lo cambiamos haciendo wine winbox en PC_1, vamos a IP > firewall y no hay ninguna regla de filtrado de tr\'e1fico por lo que deja pasar el tr\'e1fico. Vamos a ver que est\'e1 pasando en el router2 y hay unos cuantos filtros. Hay que poner la regla del drop la \'faltima. Comprobamos telnet en PC_1 a PC_3 y nos sigue sin dejar por culpa del firewall del PC_3. Hacemos sudo ufw status y vemos que todo el trafico lo para(DENY). Hacemos ahora sudo ufo allow 23 y hacemos el status y sale ALLOW. Hacemos ahora telnet desde PC1 a PC3 y funciona.\
+\
+5. Ahora desde PC_2 no nos deja. Vemos el router desde el PC_3. Se ha configurado unas reglas TCP Wrappers (Lista de acceso por usuario) para impedir que algunos usuarios accedan al telnet. Hacemos sudo nano /etc/hosts.deny (Tambi\'e9n existe hosts.allow) pone que rechace todo menos 33.1.1.2. Comentamos dicha linea y salimos y ya nos dejar\'eda hacer el telnet desde el PC_2\
+\
+6. Capturar trafico, hacer antes ping a PC_1 desde PC_2 y  desde PC_1 hacemos sudo tcpdump -n -i enp0s3 y te captura el trafico pero de una forma menos legible. \
+\
+7. Abrir un puerto y escuchar ese puerto. Desde pc hacemos nc -l 12345. Desde PC_2 hacemos nc 33.1.1.3 12345(puerto aleatorio) se queda en modo cliente y todo lo que escribamos lo manda a PC_1 y nos sale.}
